@@ -4,7 +4,7 @@
 
 
 // Recieve input from forward pass
-void NetNode::ForwardRecieve(Tensor t, const NetNode& supplier) {
+void NetNode::ForwardPass(Tensor t, const NetNode& supplier) {
 
 	// add tensor to store
 	bool inputFull = true;
@@ -24,13 +24,15 @@ void NetNode::ForwardRecieve(Tensor t, const NetNode& supplier) {
 	if (inputFull) {
 
 		// Process
-		
-		// Pass
+		ForwardProcess();
+
+		// Send
+		ForwardSend();
 	}
 
 }
 
-void NetNode::BackwardsRecieve(const NetNode& n, InputType) {
+void NetNode::BackwardsPass(const NetNode& n, InputType) {
 
 }
 

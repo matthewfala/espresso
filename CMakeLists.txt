@@ -1,4 +1,4 @@
-project(task3)
+dproject(task3)
 
 cmake_minimum_required (VERSION 2.6)
 

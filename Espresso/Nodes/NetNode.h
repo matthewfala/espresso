@@ -28,6 +28,8 @@ public:
 
 	size_t id; // must initiallize in the constructor
 
+	virtual ~NetNode();
+
 	// configure the node in the network
 	NetNode(Network& n, std::vector<NodeFlag> nf) {
 
@@ -39,27 +41,28 @@ public:
 	void Chain(NetNode n, InputType inputType);
 
 	// Forward pass
-	void ForwardRecieve(Tensor t, const NetNode& supplier);
-	void ForwardSend();
-
-	// Process
-	virtual void ForwardProcess();
-	virtual void BackwardProcess();
-
-	// Send Tensors (Create placeholder for gradient)
+	void ForwardPass(Tensor t, const NetNode& supplier);		//  Recieve
 
 	// Back propagation
-	void BackwardsRecieve(Tensor grad);
-	void BackwardsSend();
+	void BackwardsPass(Tensor grad);							//  Ditto
 
 	// Update based on optimizer
-	virtual void Update();
+	virtual void Update() = 0;
 
 	std::vector<NodeFlag> GetFlags();
 	
 	
 
 private:
+
+	// Forward pass
+	virtual void ForwardProcess() = 0;							//  Process
+	void ForwardSend();											//  Send
+
+	// Backwards pass
+	virtual void BackwardProcess() = 0;
+	void BackwardsSend();
+
 
 	// Retain what the significance of the vector is
 	std::vector<NodeFlag> flags;

@@ -2,6 +2,18 @@
 class Network {
 	
 public:
+
+	Network() {
+
+	}
+
+	~Network() {
+		// Clean up nodes. Delete each in the vector;
+		for (auto n : node) {
+			delete n;
+		}
+	}
+
 	// AddNode(NetNode) <- Called from NetNode constructor, adds to NetNode* vector,  calles SetNode on NetNode (indice of vector)
 	void AddNode(NetNode* n);
 
@@ -10,8 +22,8 @@ public:
 	void SetY(NetNode* n);
 
 	// Forward pass starts with sourceX and sourceY, call forwardRecieve (or a new function to send out the data), and pass a tensor.
-	Tensor ForwardPass(); //  Returns the Sink
-	void BackwardsPass(); // 
+	Tensor ForwardPass(Data batch); //  Returns the Sink
+	Tensor BackwardsPass(); // Returns Gradient
 
 	// Use optimizer to update
 	void Update(Optimizer* opt);
@@ -22,19 +34,17 @@ public:
 	float GetPrediction();
 	float GetInputGradient();
 
-
-
 private:
 	std::vector<NetNode*> nodes;
 
 	// these nodes are determined automatically
-	NetSource* sourceX = nullptr;  // Data
-	NetSource* sourceY = nullptr;  // Labels
+	NetSource* mSourceX = nullptr;  // Data
+	NetSource* mSourceY = nullptr;  // Labels
 
-	NetSink* sink = nullptr; // Starts backrprop
+	NetSink* mSink = nullptr; // Starts backrprop
 
 	// Test
-	NetReader* labels = nullptr; // Reads the output labels before loss function
+	NetReader* mLabels = nullptr; // Reads the output labels before loss function
 
 	// We need some node to read the labels;
 
