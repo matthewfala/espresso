@@ -35,7 +35,7 @@ Tensor::Tensor(const std::vector<std::vector<int>>& init) {
 
 // Move Constructor 
 Tensor::Tensor(Tensor&& rhs)
-	: mIsTranslated(std::move(rhs.mIsTranslated))
+	: mIsTransposed(std::move(rhs.mIsTransposed))
 	, mRows(std::move(rhs.mRows))
 	, mCols(std::move(rhs.mCols))
 	, mData(std::move(rhs.mData))
@@ -52,7 +52,7 @@ Tensor::~Tensor() {
 
 // copy constructor
 Tensor::Tensor(const Tensor& rhs)
-	: mIsTranslated(rhs.mIsTranslated)
+	: mIsTransposed(rhs.mIsTransposed)
 	, mRows(rhs.mRows)
 	, mCols(rhs.mCols)
 {
@@ -70,7 +70,7 @@ Tensor& Tensor::operator=(Tensor rhs)
 {
 	// utilize swap trick
 	using std::swap;
-	swap(mIsTranslated, rhs.mIsTranslated);
+	swap(mIsTransposed, rhs.mIsTransposed);
 	swap(mRows, rhs.mRows);
 	swap(mCols, rhs.mCols);
 	swap(mData, rhs.mData);
@@ -135,6 +135,23 @@ void Tensor::SetData(const std::vector<std::vector<float>>& t) {
 
 }
 
+
+// Extract data as a vector<vector<float>>
+std::vector<std::vector<float>> Tensor::GetData() const {
+	std::vector<std::vector<float>> dat;
+
+	for (int i = 0; i < GetRows(); ++i) {
+
+		dat.emplace_back(std::vector<float>());
+		for (int j = 0; j < GetCols(); ++j) {
+			dat[i].emplace_back(atC(i, j));
+		}
+	}
+	return dat;
+
+}
+
+
 // Initialization
 void Tensor::ZeroInit(size_t r, size_t c) {
 
@@ -179,7 +196,7 @@ void Tensor::RandInit(size_t r, size_t c, float min, float max, size_t seed) {
 
 // Utility
 void Tensor::Print() {
-	std::cout << Rows() << " x " << Cols() << " Matrix. " << (mIsTranslated ? "Translated" : "Not Translated") << std::endl;
+	std::cout << Rows() << " x " << Cols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
 	std::cout << "[";
 	for (int i = 0; i < Rows(); ++i) {
 		std::cout << "[	";

@@ -37,9 +37,10 @@ public:
 	// pass in size and a random range
 	void RandInit(size_t r, size_t c, float min, float max, size_t seed = mSeed);
 
-	// Memory management
-	void AllocTensor(size_t rows, size_t cols);
-	void DeallocTensor();
+	// Load in a vector
+	void SetData(const std::vector<std::vector<float>>& t);
+	std::vector<std::vector<float>> GetData() const;
+	
 
 	// Matrix Ops
 	inline float& at(size_t i, size_t j) {
@@ -47,7 +48,7 @@ public:
 			std::cerr << "Error: at() passed out of bounds";
 			return mData[0][0];
 		}
-		return (mIsTranslated ? mData[j][i] : mData[i][j]);
+		return (mIsTransposed ? mData[j][i] : mData[i][j]);
 	}
 
 	inline float atC(size_t i, size_t j) const {
@@ -55,7 +56,7 @@ public:
 			std::cerr << "Error: at() passed out of bounds";
 			return mData[0][0];
 		}
-		return (mIsTranslated ? mData[j][i] : mData[i][j]);
+		return (mIsTransposed ? mData[j][i] : mData[i][j]);
 	}
 
 	// Runs a function on each element of the Tensor
@@ -65,8 +66,8 @@ public:
 	Tensor Reduce(size_t axis, std::function<float(float, float)> reducer);
 
 	// std::vector<float> at(size_t i);
-	void Translate() {
-		mIsTranslated = (mIsTranslated != true);
+	void Transpose() {
+		mIsTransposed = (mIsTransposed != true);
 	}
 
 	// math
@@ -80,22 +81,13 @@ public:
 
 	Tensor Max(size_t direction);
 	
-
-	// Getters
-	inline size_t& Rows() {
-		return mIsTranslated ? mCols : mRows;
-	}
-
-	inline size_t& Cols() {
-		return mIsTranslated ? mRows : mCols;
-	}
-
+	// Getters (by value)
 	inline size_t GetRows() const {
-		return mIsTranslated ? mCols : mRows;
+		return mIsTransposed ? mCols : mRows;
 	}
 
 	inline size_t GetCols() const {
-		return mIsTranslated ? mRows : mCols;
+		return mIsTransposed ? mRows : mCols;
 	}
 
 	// Utility
@@ -106,9 +98,20 @@ private:
 
 	static size_t mSeed;
 
-	void SetData(const std::vector<std::vector<float>>& t);
+	// Getters (by reference)
+	inline size_t& Rows() {
+		return mIsTransposed ? mCols : mRows;
+	}
 
-	bool mIsTranslated = false;
+	inline size_t& Cols() {
+		return mIsTransposed ? mRows : mCols;
+	}
+
+	// Memory Management
+	void AllocTensor(size_t rows, size_t cols);
+	void DeallocTensor();
+
+	bool mIsTransposed = false;
 	float** mData = nullptr;
 	size_t mRows = 0;
 	size_t mCols = 0;

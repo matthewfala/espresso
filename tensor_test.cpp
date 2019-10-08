@@ -32,9 +32,9 @@ int main()
 
 	b.Print();
 
-	std::cerr << std::endl <<  "Translate Matrix" << std::endl;
+	std::cerr << std::endl <<  "Transpose Matrix" << std::endl;
 
-	b.Translate();
+	b.Transpose();
 	b.Print();
 
 	std::cerr << std::endl << "Single Value" << std::endl;
@@ -47,7 +47,7 @@ int main()
 	Tensor d(b);
 	d.Print();
 	d.at(0, 0) = 100.0f;
-	d.Translate();
+	d.Transpose();
 	d.Print();
 	b.Print();
 
@@ -75,7 +75,7 @@ int main()
 	e.Print();
 	Tensor f;
 	f = b;
-	f.Translate();
+	f.Transpose();
 
 	f.Print();
 	Tensor g = e.Dot(f);
