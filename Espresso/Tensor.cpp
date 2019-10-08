@@ -1,6 +1,7 @@
 #include "Tensor.h"
 #include <iostream>
 #include <utility>
+#include <random>
 
 // Constructors
 Tensor::Tensor(float init) {
@@ -151,8 +152,28 @@ void Tensor::ZeroInit(size_t r, size_t c) {
 	SetData(z);
 }
 
-void Tensor::RandInit(size_t r, size_t c) {
-	return;
+size_t Tensor::mSeed = 0;
+
+void Tensor::RandInit(size_t r, size_t c, float min, float max, size_t seed) {
+
+
+	std::mt19937 generator(mSeed);  // mt19937 is a standard mersenne_twister_engine
+	std::cout << "Random value: " << generator() << std::endl;
+	++mSeed;
+	
+	// create matrix
+	std::vector<std::vector<float>> v;
+	for (size_t i = 0; i < r; ++i) {
+		v.emplace_back(std::vector<float>{});
+		for (size_t j = 0; j < c; ++j) {
+			v[i].emplace_back( (max - min) * (static_cast<float>(generator()) / (generator.max())) + min );
+		}
+	}
+
+	// alloc matrix and set data
+	AllocTensor(r, c);
+	SetData(v);
+
 }
 
 

@@ -94,14 +94,25 @@ int main()
 
 
 	std::cerr << std::endl << "Max Check" << std::endl;
-	Tensor h = g.Reduce(0, [] (float acc, float cur) {
+	Tensor h = b.Reduce(0, [] (float acc, float cur) {
 		return (cur > acc) ? cur : acc;
 		});
 
 	h.Print();
 
-	Tensor i = h.Max(0).Max(1);
+	Tensor i = b.Max(0).Max(1);
 	i.Print();
+
+	Tensor::Seed(5);
+
+	Tensor j1, j2, j3;
+	j1.RandInit(3, 4, -.5, .5);
+	j2.RandInit(3, 4, -.5, .5);
+	j3.RandInit(3, 4, -.5, .5);
+
+	j1.Print();
+	j2.Print();
+	j3.Print();
 
 
 

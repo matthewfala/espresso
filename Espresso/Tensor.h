@@ -8,6 +8,11 @@ class Tensor {
 
 public:
 
+	// static seed
+	static void Seed(size_t seed) {
+		mSeed = seed;
+	}
+
 	// constructors
 	Tensor() {};
 	Tensor(float init);
@@ -30,7 +35,7 @@ public:
 	void ZeroInit(size_t r, size_t c);
 
 	// pass in size and a random range
-	void RandInit(size_t r, size_t c, std::function<void()> randGen, size_t seed);
+	void RandInit(size_t r, size_t c, float min, float max, size_t seed = mSeed);
 
 	// Memory management
 	void AllocTensor(size_t rows, size_t cols);
@@ -98,6 +103,8 @@ public:
 
 
 private:
+
+	static size_t mSeed;
 
 	void SetData(const std::vector<std::vector<float>>& t);
 
