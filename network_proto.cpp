@@ -9,18 +9,29 @@
 
 using std::vector;
 
+// Struct declarations
+struct Network {
+	vector<Tensor> weights;
+	vector<Tensor> weightGrads;
+	vector<Tensor> layerOutputCache;
+};
+
 // Function prototypes
 void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels);
 void AddBiasBit(vector<vector<int>>& training_images);
+void BatchTrain(Network& n, Data batch, float lr);
+Tensor OneHotEncode(Tensor& y);
 
 // Sigmoid
 auto g = [](float& x) { return 1.0f / (1.0f + exp(-x)); };
 auto gprime = [](float& y) { return y * (1 - y); };
 
+
 int main()
 {
 	// Config
 	float lr = .01;
+	int epochs = 5;
 	size_t batchSize = 4;
 	size_t layers = 2;
 	vector<size_t> hiddenLayerSizes{ 100, 10 }; // +1 for weight due to bias
@@ -36,153 +47,44 @@ int main()
 	layerSizes.emplace(layerSizes.begin(), inputLayerSize);
 
 	// Initiallize network
-	vector<Tensor> weights;
-	vector<Tensor> weightGrads;
-	vector<Tensor> layerOutputCache;
+	Network nn;
 	for (size_t i = 0; i < layerSizes.size() - 1; ++i) {
-		weights.emplace_back(Tensor());
-		weightGrads.emplace_back(Tensor());
+		nn.weights.emplace_back(Tensor());
+		nn.weightGrads.emplace_back(Tensor());
 
 		// +1 for bias trick
-		weights[i].RandInit(layerSizes[i + 1], layerSizes[i] + 1, -.05, .05);
+		nn.weights[i].RandInit(layerSizes[i + 1], layerSizes[i] + 1, -.05, .05);
 		// weightGrads[i].ZeroInit(layerSizes[i + 1], layerSizes[i] + 1); // Init later
 	}
 
 	// Load data batcher
 	DataBatcher batcher(training_images, training_labels, batchSize);
-	batcher.Shuffle();
 
-	// Get batch (& unpack)
-	Data batch = batcher.GetBatch();
-	Tensor X = batch.X;
-	Tensor y = batch.y;
-	bool isLast = batch.lastBatch;
+	for (int e = 0; e < epochs; ++e) {
+		// shuffle data
+		batcher.Shuffle();
 
-	// Forward pass
+		// train loop
+		bool lastBatch = false;
+		do {
 
-	// FC & Sigmoid
-	Tensor O = X;
-	// 	O.PrintShape();
+			// Get batch (& unpack)
+			Data batch = batcher.GetBatch();
+			lastBatch = batch.lastBatch;
+			BatchTrain(nn, batch, lr);
 
-	for (size_t layer = 0; layer < weights.size(); ++layer) {
+		} while (!lastBatch);
 
-		// FC
-		std::cerr << "FC Layer: " << layer << std::endl;
-		Tensor& W = weights[layer];
-		if (layer != weights.size() - 1) {
-			O = W.DotTB(O); // use DotTB for a pretransposed matrix + bias bit
-			O.ToggleBiasOff(); // temporarily remove bias for sigmoid
-		}
-		else {
-			O = W.DotT(O); // last layer's output is not biased
-		}
-
-		// Sigmoid
-		O.ForEach(g);
-		O.ToggleBiasOn(); // add back bias (if present);
-
-		// save the output
-		layerOutputCache.emplace_back(O);
-
-		// output progress
-		// O.PrintShape();
-	}
-
-	// Deviation
-	Tensor squareInput = layerOutputCache.back();
-	squareInput *= -1;
-	squareInput += y; // row wise addition
-
-	// Square & loss
-	Tensor square = squareInput;  // square by element
-	square *= square;
-	Tensor loss = square.Sum(0).Sum(1);
-	loss /= static_cast<float>(batchSize);
-
-
-	// Log result
-	std::cerr << "Loss: " << loss.at(0, 0) << std::endl;
-
-
-	// Backprop
-
-	// loss function
-
-	// initiallize the output gradient square
-	Tensor squareOutputGrad;
-	squareOutputGrad.ZeroInit(square.GetRows(), square.GetCols());
-
-	// reverse sum
-	squareOutputGrad += (1.0f / batchSize);
-	Tensor squareLocalGrad = squareInput;
-	squareLocalGrad *= 2;
-
-	// dInput = dOutput * LocalGradient
-	Tensor lossInputGrad = squareOutputGrad;
-	lossInputGrad *= squareLocalGrad;
-	lossInputGrad *= -1;
-	lossInputGrad.PrintShape();
-
-	// layer backprop
-	Tensor layerOutputGradient = lossInputGrad;
-	for (int oi = static_cast<int>(layerOutputCache.size() - 1); oi >= 0; --oi) {
-
-		// Reverse sigmoid
-
-		// local gradient
-		Tensor& O = layerOutputCache[oi];
-		if (oi != layerOutputCache.size() - 1) {
-			O.ToggleBiasOff(); // remove the bias bit if not output layer
-		}
-
-		Tensor dO = O;
-		dO.ForEach(gprime);
-		std::cerr << "Rows: " << dO.GetRows() << std::endl;
-
-		std::cerr << "Next Layer Input Gradient" << std::endl;
-		layerOutputGradient.PrintShape();
-		std::cerr << "Local Sigmoid Gradient" << std::endl;
-		dO.PrintShape();
-
-		// global gradient
-		dO *= layerOutputGradient;
-
-		// Reverse FC
-		Tensor& Xi = (oi > 0) ? layerOutputCache[static_cast<size_t>(oi) - 1] : X;
-		
-		Xi.Transpose();
-		weightGrads[oi] = O.Dot(Xi);
-
-		Xi.Transpose();
-
-		Tensor& W = weights[oi];
-		W.Transpose();
-		layerOutputGradient = W.Dot(O);
-		layerOutputGradient.ToggleBiasOff();
-		W.Transpose();
-
-		// restore O
-		O.ToggleBiasOn();
-		
-		layerOutputGradient.PrintShape();
-		
-	}
-
-
-	// Gradient Descent (Update W)
-	for (int i = 0; i < weights.size(); ++i) {
-		
-		// Grad -> Step size
-		weightGrads[i] *= lr;
-		weights[i] -= weightGrads[i];
 
 	}
-
+	
+	
 	
 
 
 	return 0;
 }
+
 
 
 
@@ -203,6 +105,26 @@ void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels
 	
 }
 
+
+// expects a tensor of labels with one row
+Tensor OneHotEncode(Tensor& y) {
+	if (y.GetRows() != 1) {
+		std::cerr << "ERROR: Please provide OneHotEncode with a tensor of 1 row" << std::endl;
+		return Tensor();
+	}
+
+	Tensor hot;
+	size_t max = static_cast<size_t>(y.Max(1).atC(0, 0));
+	hot.ZeroInit(max + 1, y.GetCols());
+
+	for (int col = 0; col < y.GetCols(); ++col) {
+		int colOneInd = static_cast<int>(y.at(0, col));
+		hot.at(colOneInd, col) = 1;
+	}
+
+	return hot;
+}
+
 void AddBiasBit(vector<vector<int>>& training_images) {
 	for (auto t : training_images) {
 		t.emplace_back(1.0f);
@@ -212,6 +134,139 @@ void AddBiasBit(vector<vector<int>>& training_images) {
 
 
 
+void BatchTrain(Network& n, Data batch, float lr) {
+
+	Tensor X = batch.X;
+	Tensor y = batch.y;
+	y = OneHotEncode(y); // convert y to One hot encoding
+
+	bool isLast = batch.lastBatch;
+
+	// Forward pass
+
+	// FC & Sigmoid
+	Tensor O = X;
+	// 	O.PrintShape();
+
+	// remove output cache
+	n.layerOutputCache.clear();
+
+	for (size_t layer = 0; layer < n.weights.size(); ++layer) {
+
+		// FC
+		std::cerr << "FC Layer: " << layer << std::endl;
+		Tensor& W = n.weights[layer];
+		if (layer != n.weights.size() - 1) {
+			O = W.DotTB(O); // use DotTB for a pretransposed matrix + bias bit
+			O.ToggleBiasOff(); // temporarily remove bias for sigmoid
+		}
+		else {
+			O = W.DotT(O); // last layer's output is not biased
+		}
+
+		// Sigmoid
+		O.ForEach(g);
+		O.ToggleBiasOn(); // add back bias (if present);
+
+		// save the output
+		n.layerOutputCache.emplace_back(O);
+
+		// output progress
+		// O.PrintShape();
+	}
+
+	// Deviation
+	Tensor squareInput = n.layerOutputCache.back();
+	squareInput *= -1;
+	squareInput += y; // row wise addition
+
+	// Square & loss
+	Tensor square = squareInput;  // square by element
+	square *= square;
+	Tensor loss = square.Sum(0).Sum(1);
+	loss /= static_cast<float>(X.GetRows());   //// POSSIBLE ERROR SOURCE!!!!!!!
+
+
+	// Log result
+	std::cerr << "Loss: " << loss.at(0, 0) << std::endl;
+
+
+	// Backprop
+
+	// loss function
+
+	// initiallize the output gradient square
+	Tensor squareOutputGrad;
+	squareOutputGrad.ZeroInit(square.GetRows(), square.GetCols());
+
+	// reverse sum
+	squareOutputGrad += (1.0f / X.GetRows());   // Possible error source
+	Tensor squareLocalGrad = squareInput;
+	squareLocalGrad *= 2;
+
+	// dInput = dOutput * LocalGradient
+	Tensor lossInputGrad = squareOutputGrad;
+	lossInputGrad *= squareLocalGrad;
+	lossInputGrad *= -1;
+	lossInputGrad.PrintShape();
+	lossInputGrad.Print();
+
+	// layer backprop
+	Tensor layerOutputGradient = lossInputGrad;
+	for (int oi = static_cast<int>(n.layerOutputCache.size() - 1); oi >= 0; --oi) {
+
+		// Reverse sigmoid
+
+		// local gradient
+		Tensor& O = n.layerOutputCache[oi];
+		if (oi != n.layerOutputCache.size() - 1) {
+			O.ToggleBiasOff(); // remove the bias bit if not output layer
+		}
+
+		Tensor dO = O;
+		dO.ForEach(gprime);
+		std::cerr << "Rows: " << dO.GetRows() << std::endl;
+
+		std::cerr << "Next Layer Input Gradient" << std::endl;
+		layerOutputGradient.PrintShape();
+		std::cerr << "Local Sigmoid Gradient" << std::endl;
+		dO.PrintShape();
+
+		// global gradient
+		dO *= layerOutputGradient;
+
+		// Reverse FC
+		Tensor& Xi = (oi > 0) ? n.layerOutputCache[static_cast<size_t>(oi) - 1] : X;
+
+		Xi.Transpose();
+		n.weightGrads[oi] = O.Dot(Xi);
+
+		Xi.Transpose();
+
+		Tensor& W = n.weights[oi];
+		W.Transpose();
+		layerOutputGradient = W.Dot(O);
+		layerOutputGradient.ToggleBiasOff();
+		W.Transpose();
+
+		// restore O
+		O.ToggleBiasOn();
+
+		layerOutputGradient.PrintShape();
+
+	}
+
+
+	// Gradient Descent (Update W)
+	for (int i = 0; i < n.weights.size(); ++i) {
+
+		// Grad -> Step size
+		n.weightGrads[i] *= lr;
+		n.weights[i] -= n.weightGrads[i];
+
+	}
+
+}
 
 
 
