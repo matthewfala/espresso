@@ -14,6 +14,6 @@ cmake_minimum_required (VERSION 2.6)
 #set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-file(GLOB SOURCES "./Espresso/*.cpp" "databatcher_test.cpp")
+file(GLOB SOURCES "./Espresso/*.cpp" "tensor_test.cpp")
 
 add_executable(task3 ${SOURCES})

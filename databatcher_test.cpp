@@ -25,16 +25,15 @@ int main()
 	cerr << "Number of labels: " << training_labels.size() << endl;
 
 	
-
 	// Initiallize our network
 
-	//vector<vector<int>> training_images{ {1, 2, 3}, { 4, 5, 6 }};
-	//vector<int> training_labels{ 1, 0 };
+	vector<vector<int>> training_images_test{ {1, 2, 3}, { 4, 5, 6 }};
+	vector<int> training_labels_test{ 1, 0 };
 
 
-	DataBatcher db(training_images, training_labels, 1);
-
+	DataBatcher db(training_images, training_labels, 4);
 	db.Shuffle();
+
 	Data batch1 = db.GetBatch();
 
 	std::cerr << "Data y" << std::endl;

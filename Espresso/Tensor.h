@@ -17,6 +17,8 @@ public:
 	// constructors
 	Tensor() {};
 	Tensor(float init);
+	// Tensor(const std::vector<std::vector<float>>& init);
+	// Tensor(const std::vector<std::vector<float>>& init);
 	Tensor(const std::vector<std::vector<float>>& init);
 	Tensor(const std::vector<std::vector<int>>& init);
 

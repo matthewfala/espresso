@@ -14,16 +14,16 @@ int main()
 	Tensor t;
 	std::cerr << "ColCount " << t.GetCols() << std::endl;
 	t.ZeroInit(5, 5);
-	
+
 	std::cerr << "Rows: " << t.GetRows() << std::endl;
 	std::cerr << "Cols: " << t.GetCols() << std::endl;
 	std::cerr << "Val at 4, 4: " << t.at(4, 4) << " ." << std::endl;
 
 	std::cerr << std::endl << "Print Matrix" << std::endl;
-	
+
 	//t.Print();
 
-	vector<vector<float>> x {
+	vector<vector<float>> x{
 
 		{1, 7, 3},
 		{4, 5, 6}
@@ -33,7 +33,7 @@ int main()
 
 	b.Print();
 
-	std::cerr << std::endl <<  "Transpose Matrix" << std::endl;
+	std::cerr << std::endl << "Transpose Matrix" << std::endl;
 
 	b.Transpose();
 	b.Print();
@@ -43,7 +43,7 @@ int main()
 
 	c.Print();
 
-	
+
 	std::cerr << std::endl << "Copy Constructor" << std::endl;
 	Tensor d(b);
 	d.Print();
@@ -95,7 +95,7 @@ int main()
 
 
 	std::cerr << std::endl << "Max Check" << std::endl;
-	Tensor h = b.Reduce(0, [] (float acc, float cur) {
+	Tensor h = b.Reduce(0, [](float acc, float cur) {
 		return (cur > acc) ? cur : acc;
 		});
 
@@ -114,6 +114,28 @@ int main()
 	j1.Print();
 	j2.Print();
 	j3.Print();
+
+
+	std::cerr << "Subtract Column Tensor" << std::endl;
+	Tensor k(b);
+	Tensor l(vector<vector<float>>{ {-40, -10 }  } );
+
+	k.Print();
+	l.Print();
+	k -= l;
+	k.Print();
+
+	std::cerr << "Subtract Row Tensor" << std::endl;
+
+	k = b;
+	k.Print();
+	Tensor m = Tensor(vector<vector<float>>{ {-40}, { -10 }, { -30 } });
+	m.Print();
+	k -= m;
+	k.Print();
+	
+
+
 
 
 

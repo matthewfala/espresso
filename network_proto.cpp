@@ -7,37 +7,123 @@
 #include "Espresso/Tensor.h"
 #include "Espresso/DataBatcher.hpp"
 
-using namespace std;
+using std::vector;
+
+// Function prototypes
+void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels);
+
+// Sigmoid
+inline float g(float x) { return 1.0 / (1.0 + exp(-x)); }
+inline float gprime(float y) { return y * (1 - y); }
+
 int main()
 {
-	string filename = "../MNIST/train-images.idx3-ubyte";
-	//load MNIST images
-	vector <vector< int> > training_images;
-	loadMnistImages(filename, training_images);
-	cout << "Number of images: " << training_images.size() << endl;
-	cout << "Image size: " << training_images[0].size() << endl;
+	// Config
+	size_t batchSize = 4;
+	size_t layers = 2;
+	vector<size_t> hiddenLayerSizes{ 100, 10 }; // +1 for weight due to bias
 
-	filename = "../MNIST/train-labels.idx1-ubyte";
-	//load MNIST labels
+	// Load data
+	vector<vector<int>> training_images;
 	vector<int> training_labels;
-	loadMnistLabels(filename, training_labels);
-	cout << "Number of labels: " << training_labels.size() << endl;
+	LoadData(training_images, training_labels);
+	AddBiasBit(training_images);  // bias trick
+
+	size_t inputLayerSize = training_images.size() - 1;
+	vectorsize_t> layerSizes(hiddenLayerSizes);
+	layerSizes.emplace(layerSizes.begin(), inputLayerSize);
+
+
+	// Initiallize network
+	vector<Tensor> weights;
+	vector<Tensor> weightGrads;
+
+	for (size_t i = 0; i < layerSizes.size() - 1; ++i) {
+		weights.emplace_back(Tensor());
+		weightGrads.emplace_back(Tensor());
+		weights[i].RandInit(layerSizes[i + 1], layerSizes[i], -.05, .05);
+		weightGrads[i].ZeroInit(layerSizes[i + 1], layerSizes[i], -.05, .05);
+	}
+
+	// Load data batcher
+	DataBatcher batcher(training_images, training_labels, batchSize);
+	batcher.Shuffle();
+
+	// Get batch (& unpack)
+	Data batch = batcher.GetBatch();
+	Tensor X = batch.X;
+	Tensor y = batch.y;
+	bool isLast = batch.lastBatch;
+
+	// Forward pass
+
+	// FC & Sigmoid
+	for (auto W& : weights) {
+
+		// FC
+		X = W.DotT(X); // use DotT for a pretransposed matrix
+
+		// Sigmoid
+		X.ForEach(g);
+
+	}
+
+	// Loss
+	X -= y;  // row wise
+	X *= X;
 
 
 
 
-	// Initiallize our network
+
+
+
+	/*
+	inline double g(double x) { return 1.0 / (1.0 + exp(-x)); }
+	inline double gprime(double y) { return y * (1 - y); }
 	
+	*/
 
-	// create nodes
+
 	
 
 
 	return 0;
 }
 
-// Skeleton Code
 
+
+
+
+void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels) {
+
+	string filename = "../MNIST/train-images.idx3-ubyte";
+	//load MNIST images
+	loadMnistImages(filename, training_images);
+	cout << "Number of images: " << training_images.size() << endl;
+	cout << "Image size: " << training_images[0].size() << endl;
+
+	filename = "../MNIST/train-labels.idx1-ubyte";
+	//load MNIST labels
+	loadMnistLabels(filename, training_labels);
+	cout << "Number of labels: " << training_labels.size() << endl;
+	
+}
+
+void AddBiasBit(vector<vector<int>>& training_images) {
+	for (auto t : training_images) {
+		t.emplace_back(1.0f);
+	}
+}
+
+
+
+
+
+
+
+// Skeleton Code
+/*
 // Data contains batchsize
 Records Train(Network& n, int epochs=100, Optimizer& optimizer=SGD, const DataBatcher& dataBatcher, const Data& valData) {
 
@@ -88,3 +174,5 @@ Record Test(Network n, Data data) {
 void Predict(Network n, Unlabeled ud) {
 	return;
 }
+
+*/

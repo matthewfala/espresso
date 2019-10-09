@@ -8,6 +8,7 @@
 
 using namespace std;
 
+int row_override = 5;
 
 int reverseInt(int i)
 {
@@ -30,6 +31,11 @@ void loadMnistImages(const string& filename, vector< vector< int > > &images)
 		int number_of_images = 0;
 		file.read((char*)&number_of_images, sizeof(number_of_images));
 		number_of_images = reverseInt(number_of_images);
+
+		if (row_override != 0) {
+			number_of_images = row_override;
+		}
+
 		int n_rows = 0;
 		file.read((char*)&n_rows, sizeof(n_rows));
 		n_rows = reverseInt(n_rows);
@@ -65,6 +71,11 @@ void loadMnistLabels(const string& filename, vector< int > &labels)
 		int number_of_items = 0;
 		file.read((char*)&number_of_items, sizeof(number_of_items));
 		number_of_items = reverseInt(number_of_items);
+
+
+		if (row_override != 0) {
+			number_of_items = row_override;
+		}
 
 		labels.resize(number_of_items);
 		for (int i = 0; i < number_of_items; ++i)

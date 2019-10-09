@@ -331,13 +331,72 @@ Tensor& Tensor::operator+=(const Tensor& rhs) {
 }
 
 Tensor& Tensor::operator-=(const Tensor& rhs) {
+	
+	// Special: Row wise subtraction
+	size_t iStep = 0;
+	size_t jStep = 0;
+	size_t iNext = 0;
+	size_t jNext = 0;
+	size_t stepCount, nextCount;
+
+	bool lineWise = false;
+
+	// this -> (x) rhs -> (|) ( i is down ) (j is right)
+	if (GetRows() == rhs.GetRows() && rhs.GetCols() == 1) {
+		// Edit in row lines
+		iStep = 1;
+		jNext = 1;
+		stepCount = GetRows();
+		nextCount = GetCols();
+		lineWise = true;
+	}
+
+	// (-)
+	else if (GetCols() == rhs.GetCols() && rhs.GetRows() == 1) {
+		// Edit in col lines
+		jStep = 1;
+		iNext = 1;
+		stepCount = GetCols();
+		nextCount = GetRows();
+		lineWise = true;
+	}
+
+	if (lineWise) {
+
+		// Loop basis swap (i, j) -> next, step
+		size_t step = 0;
+		size_t next = 0;
+
+
+		while (next < nextCount) {
+			step = 0;
+			while (step < stepCount) {
+
+				// switch to i, j basis
+				size_t i = iStep * step + iNext * next;
+				size_t j = jStep * step + jNext * next;
+
+				// for line, only take into account the (line step) basis, not the (next) basis
+				at(i, j) -= rhs.atC(iStep * step, jStep * step);
+
+				++step;
+			}
+
+			++next;
+		}
+
+		return *this;
+	}
+
+
+
 	// sentinal
 	if (GetCols() != rhs.GetCols() || GetRows() != rhs.GetRows()) {
 		std::cout << "Error: Subtraction shapes do not match" << std::endl;
 		return *this;
 	}
 
-	// copy the data
+	// edit the data
 	for (size_t i = 0; i < GetRows(); ++i) {
 		for (size_t j = 0; j < GetCols(); ++j) {
 			at(i, j) -= rhs.atC(i, j);
