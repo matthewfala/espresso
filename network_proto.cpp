@@ -101,7 +101,12 @@ int main()
 
 	// Square & loss
 	Tensor square = squareInput;  // square by element
+
+	std::cerr << "SQUARE " << std::endl;
+	square.Print();
 	square *= square;
+
+	square.Print();
 	Tensor loss = square.Sum(0).Sum(1);
 
 

@@ -376,7 +376,7 @@ Tensor& Tensor::TwoTensorOp(std::function<float(float, float)> op, const Tensor&
 	// edit the data
 	for (size_t i = 0; i < GetRows(); ++i) {
 		for (size_t j = 0; j < GetCols(); ++j) {
-			at(i, j) -= rhs.atC(i, j);
+			at(i, j) = op(atC(i, j), rhs.atC(i, j));
 		}
 	}
 
