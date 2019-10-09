@@ -89,6 +89,12 @@ public:
 		return t;
 	}
 
+	// Dot product with result Transposed and Biased 
+	Tensor DotTB(const Tensor& o) {
+		Tensor t = DotH(o, true, true);
+		return t;
+	}
+
 	Tensor& operator+=(const Tensor& rhs);
 	Tensor& operator-=(const Tensor& rhs);
 	Tensor& operator*=(const Tensor& rhs);
@@ -113,6 +119,7 @@ public:
 
 	// Utility
 	void Print();
+	void PrintShape();
 
 
 private:
@@ -129,7 +136,7 @@ private:
 	}
 
 	// Helper function for dot product
-	Tensor DotH(const Tensor& o, bool isTransposed);
+	Tensor DotH(const Tensor& o, bool isTransposed, bool isBiased = false);
 
 	// Memory Management
 	void AllocTensor(size_t rows, size_t cols);

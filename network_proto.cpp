@@ -37,14 +37,14 @@ int main()
 	// Initiallize network
 	vector<Tensor> weights;
 	vector<Tensor> weightGrads;
-
+	vector<Tensor> layerOutputCache;
 	for (size_t i = 0; i < layerSizes.size() - 1; ++i) {
 		weights.emplace_back(Tensor());
 		weightGrads.emplace_back(Tensor());
 
 		// +1 for bias trick
-		weights[i].RandInit(layerSizes[i + 1] + 1, layerSizes[i] + 1, -.05, .05);
-		weightGrads[i].ZeroInit(layerSizes[i + 1] + 1, layerSizes[i] + 1);
+		weights[i].RandInit(layerSizes[i + 1], layerSizes[i] + 1, -.05, .05);
+		weightGrads[i].ZeroInit(layerSizes[i + 1], layerSizes[i] + 1);
 	}
 
 	// Load data batcher
@@ -58,37 +58,55 @@ int main()
 	bool isLast = batch.lastBatch;
 
 	// Forward pass
-	Tensor O;
 
 	// FC & Sigmoid
-	for (auto& W : weights) {
+	Tensor O = X;
+	for (size_t layer = 0; layer < weights.size(); ++layer) {
 
 		// FC
-		std::cerr << "W" << std::endl;
-		//W.Print();
-		std::cerr << "X" << std::endl;
-		//X.Print();
+		std::cerr << "FC Layer: " << layer << std::endl;
+		Tensor& W = weights[layer];
+		W.PrintShape();
+		O.PrintShape();
 
-		O = W.DotT(X); // use DotT for a pretransposed matrix
-		O.Print();
+		if (layer != weights.size() - 1) {
+			O = W.DotTB(O); // use DotTB for a pretransposed matrix + bias bit
+		}
+		else {
+			O = W.DotT(O); // last layer's output is not biased
+		}
+
+		O.PrintShape();
 
 		// Sigmoid
 		O.ForEach(g);
-		X = O;
 
+		// save the output
+		layerOutputCache.emplace_back(O);
 	}
 
-	// Loss
-	X -= y;  // row wise subtraction
-	X *= X;  // square by element
-	Tensor Loss = X.Sum(0).Sum(1);
+
+	std::cerr << "Running Deviation" << std::endl;
+	// Deviation
+	Tensor squareInput = layerOutputCache.back();
+	squareInput.Print();
+
+	squareInput *= -1;
+	squareInput.Print();
+	y.Print();
+	squareInput += y; // row wise addition
+
+	squareInput.Print();
+	y.PrintShape();
+
+	// Square & loss
+	Tensor square = squareInput;  // square by element
+	square *= square;
+	Tensor loss = square.Sum(0).Sum(1);
+
 
 	// Log result
-	std::cerr << "Loss: " << Loss.at(0, 0) << std::endl;
-
-
-
-
+	std::cerr << "Loss: " << loss.at(0, 0) << std::endl;
 
 
 

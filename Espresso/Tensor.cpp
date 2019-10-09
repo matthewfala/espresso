@@ -244,6 +244,10 @@ void Tensor::Print() {
 
 }
 
+void Tensor::PrintShape() {
+	std::cout << Rows() << " x " << Cols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
+}
+
 // math
 void Tensor::ForEach(std::function<void(float&)> f) {
 	for (size_t i = 0; i < mRows; ++i) {
@@ -380,7 +384,7 @@ Tensor& Tensor::TwoTensorOp(std::function<float(float, float)> op, const Tensor&
 }
 
 
-Tensor Tensor::DotH(const Tensor& o, bool isTransposed) { 
+Tensor Tensor::DotH(const Tensor& o, bool isTransposed, bool isBiased) { 
 
 	// sentinal
 	if (GetCols() != o.GetRows()) {
@@ -388,18 +392,31 @@ Tensor Tensor::DotH(const Tensor& o, bool isTransposed) {
 		return *this;
 	}
 
+	// bias
+	size_t bias = 0;
+	if (isBiased) {
+		bias = 1;
+	}
+
 	// dot
 	Tensor d;
 	if (!isTransposed) {
-		d.ZeroInit(GetRows(), o.GetCols());
+		d.ZeroInit(GetRows() + bias, o.GetCols());
 	}
 	else {
 		d.Transpose();
-		d.ZeroInit(GetRows(), o.GetCols());
+		d.ZeroInit(GetRows() + bias, o.GetCols());
 	}
 
-	for (int i = 0; i < GetRows(); ++i) {
+	for (int i = 0; i < GetRows() + bias; ++i) {
 		for (int j = 0; j < o.GetCols(); ++j) {
+
+			// bias (row of 1s)
+			if (i >= GetRows()) {
+				d.at(i, j) = 1.0f;
+				continue;
+			}
+
 			float sum = 0;
 			for (int k = 0; k < GetCols(); ++k) {
 				sum += atC(i, k) * o.atC(k, j);
