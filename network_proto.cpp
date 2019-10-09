@@ -76,20 +76,6 @@ Records Train(Network& n, int epochs=100, Optimizer& optimizer=SGD, const DataBa
 }
 
 
-// Network
-
-// Automatic indexing
-// On
-// AddNode(NetNode) <- Called from NetNode constructor, adds to NetNode* vector,  calles SetNode on NetNode (indice of vector)
-//
-
-// SetLoss
-// SetOutput
-// ForwardPass
-// BackwardsPass
-// NetNode LossNode (chain loss function to this)
-// NetNode OutputNode (chain d
-
 
 Record Test(Network n, Data data) {
 

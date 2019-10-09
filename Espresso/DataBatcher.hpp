@@ -80,7 +80,9 @@ public:
 		Tensor tX(X);
 		tX.Transpose();
 		Tensor tY(vector<vector<float>>{ Y });
-		tY.Transpose();
+
+		// maybe transpose
+		// tY.Transpose();
 		return Data{ tX, tY, lastBatch };
 
 	}
