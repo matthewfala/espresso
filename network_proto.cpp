@@ -61,67 +61,116 @@ int main()
 
 	// FC & Sigmoid
 	Tensor O = X;
+	// 	O.PrintShape();
+
 	for (size_t layer = 0; layer < weights.size(); ++layer) {
 
 		// FC
 		std::cerr << "FC Layer: " << layer << std::endl;
 		Tensor& W = weights[layer];
-		W.PrintShape();
-		O.PrintShape();
-
 		if (layer != weights.size() - 1) {
 			O = W.DotTB(O); // use DotTB for a pretransposed matrix + bias bit
+			O.ToggleBiasOff(); // temporarily remove bias for sigmoid
 		}
 		else {
 			O = W.DotT(O); // last layer's output is not biased
 		}
 
-		O.PrintShape();
-
 		// Sigmoid
 		O.ForEach(g);
+		O.ToggleBiasOn(); // add back bias (if present);
+
+		O.Print();
 
 		// save the output
 		layerOutputCache.emplace_back(O);
+
+		// output progress
+		// O.PrintShape();
 	}
 
-
-	std::cerr << "Running Deviation" << std::endl;
 	// Deviation
 	Tensor squareInput = layerOutputCache.back();
-	squareInput.Print();
-
 	squareInput *= -1;
-	squareInput.Print();
-	y.Print();
 	squareInput += y; // row wise addition
-
-	squareInput.Print();
-	y.PrintShape();
 
 	// Square & loss
 	Tensor square = squareInput;  // square by element
-
-	std::cerr << "SQUARE " << std::endl;
-	square.Print();
 	square *= square;
-
-	square.Print();
 	Tensor loss = square.Sum(0).Sum(1);
+	loss /= static_cast<float>(batchSize);
 
 
 	// Log result
 	std::cerr << "Loss: " << loss.at(0, 0) << std::endl;
 
 
+	// Backprop
 
+	// initiallize the output gradient square
+	Tensor squareOutputGrad;
+	squareOutputGrad.ZeroInit(square.GetRows(), square.GetCols());
+	square.Print();
+	square += 10000;
+	square.Print();
 
+	// reverse sum
+	squareOutputGrad += (1.0f / batchSize);
+	Tensor squareLocalGrad = squareInput;
+	squareLocalGrad *= 2;
 
-	/*
-	inline double g(double x) { return 1.0 / (1.0 + exp(-x)); }
-	inline double gprime(double y) { return y * (1 - y); }
-	
-	*/
+	// loss function
+	// dInput = dOutput * LocalGradient
+	Tensor lossInputGrad = squareOutputGrad;
+	lossInputGrad *= squareLocalGrad;
+	lossInputGrad *= -1;
+
+	lossInputGrad.PrintShape();
+	lossInputGrad.Print();
+
+	// layer backprop
+	Tensor layerOutputGradient = lossInputGrad;
+	for (int oi = layerOutputCache.size() - 1; oi >= 0; --oi) {
+
+		// Reverse sigmoid
+
+		// local gradient
+		Tensor& O = layerOutputCache[oi];
+		if (oi != layerOutputCache.size() - 1) {
+			O.ToggleBiasOff(); // remove the bias bit if not output layer
+		}
+
+		Tensor dO = O;
+		dO.ForEach(gprime);
+		std::cerr << "Rows: " << dO.GetRows() << std::endl;
+
+		std::cerr << "Next Layer Input Gradient" << std::endl;
+		layerOutputGradient.PrintShape();
+		std::cerr << "Local Sigmoid Gradient" << std::endl;
+		dO.PrintShape();
+
+		// global gradient
+		dO *= layerOutputGradient;
+
+		// Reverse FC
+		Tensor& Xi = (oi > 0) ? layerOutputCache[oi - 1] : X;
+		
+		Xi.Transpose();
+		Tensor dW = O.Dot(Xi);
+		Xi.Transpose();
+
+		Tensor& W = weights[oi];
+		W.Transpose();
+		layerOutputGradient = W.Dot(O);
+		layerOutputGradient.ToggleBiasOff();
+		W.Transpose();
+
+		// restore O
+		O.ToggleBiasOn();
+		
+		layerOutputGradient.PrintShape();
+		
+	}
 
 
 	

@@ -35,6 +35,7 @@ Tensor::Tensor(const std::vector<std::vector<int>>& init) {
 // Move Constructor 
 Tensor::Tensor(Tensor&& rhs) noexcept
 	: mIsTransposed(std::move(rhs.mIsTransposed))
+	, mToggleOffBias(std::move(rhs.mToggleOffBias))
 	, mRows(std::move(rhs.mRows))
 	, mCols(std::move(rhs.mCols))
 	, mData(std::move(rhs.mData))
@@ -52,6 +53,7 @@ Tensor::~Tensor() {
 // copy constructor
 Tensor::Tensor(const Tensor& rhs)
 	: mIsTransposed(rhs.mIsTransposed)
+	, mToggleOffBias(rhs.mToggleOffBias)
 	, mRows(rhs.mRows)
 	, mCols(rhs.mCols)
 {
@@ -82,6 +84,7 @@ Tensor& Tensor::operator=(Tensor& rhs)
 
 	// copy the data
 	mIsTransposed = rhs.mIsTransposed;
+	mToggleOffBias = rhs.mToggleOffBias;
 	mRows = rhs.mRows;
 	mCols = rhs.mCols;
 
@@ -104,6 +107,7 @@ Tensor& Tensor::operator=(Tensor&& rhs) noexcept {
 	}
 
 	mIsTransposed = std::move(rhs.mIsTransposed);
+	mToggleOffBias = std::move(rhs.mToggleOffBias);
 	mRows = std::move(rhs.mRows);
 	mCols = std::move(rhs.mCols);
 	mData = std::move(rhs.mData);
@@ -231,11 +235,11 @@ void Tensor::RandInit(size_t r, size_t c, float min, float max, unsigned int see
 
 // Utility
 void Tensor::Print() {
-	std::cout << Rows() << " x " << Cols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
+	std::cout << GetRows() << " x " << GetCols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
 	std::cout << "[";
-	for (int i = 0; i < Rows(); ++i) {
+	for (int i = 0; i < GetRows(); ++i) {
 		std::cout << "[	";
-		for (int j = 0; j < Cols(); ++j) {
+		for (int j = 0; j < GetCols(); ++j) {
 			std::cout << at(i, j) << ",	";
 		}
 		std::cout << "	]" << std::endl;
@@ -245,7 +249,7 @@ void Tensor::Print() {
 }
 
 void Tensor::PrintShape() {
-	std::cout << Rows() << " x " << Cols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
+	std::cout << GetRows() << " x " << Cols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
 }
 
 // math

@@ -61,6 +61,7 @@ public:
 			std::cerr << "Error: at() passed out of bounds";
 			return mData[0][0];
 		}
+
 		return (mIsTransposed ? mData[j][i] : mData[i][j]);
 	}
 
@@ -76,6 +77,14 @@ public:
 	// std::vector<float> at(size_t i);
 	void Transpose() {
 		mIsTransposed = (mIsTransposed != true);
+	}
+
+	void ToggleBiasOff() {
+		mToggleOffBias = true;
+	}
+
+	void ToggleBiasOn() {
+		mToggleOffBias = false;
 	}
 
 	// math
@@ -110,7 +119,13 @@ public:
 	
 	// Getters (by value)
 	inline size_t GetRows() const {
-		return mIsTransposed ? mCols : mRows;
+
+		if (!mToggleOffBias) {
+			return mIsTransposed ? mCols : mRows;
+		}
+		else {
+			return ((mIsTransposed ? mCols : mRows) - 1);
+		}
 	}
 
 	inline size_t GetCols() const {
@@ -147,6 +162,7 @@ private:
 	size_t mCols = 0;
 
 	bool mIsTransposed = false;
+	bool mToggleOffBias = false;
 
 
 };
