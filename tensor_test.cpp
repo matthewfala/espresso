@@ -133,6 +133,16 @@ int main()
 	m.Print();
 	k -= m;
 	k.Print();
+
+	// Equality operator
+	std::cerr << "Assignment op" << std::endl;
+
+	k.Print();
+	d.Print();
+
+	k = d;
+	k.Print();
+
 	
 
 

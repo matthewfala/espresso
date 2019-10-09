@@ -58,7 +58,7 @@ int main()
 	// Forward pass
 
 	// FC & Sigmoid
-	for (auto W& : weights) {
+	for (auto& W : weights) {
 
 		// FC
 		X = W.DotT(X); // use DotT for a pretransposed matrix
@@ -69,7 +69,7 @@ int main()
 	}
 
 	// Loss
-	X -= y;  // row wise
+	X -= y;  // row wise subtraction
 	X *= X;
 
 

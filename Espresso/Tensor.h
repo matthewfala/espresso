@@ -32,7 +32,7 @@ public:
 	Tensor(const Tensor& rhs);
 
 	// equality operator
-	Tensor& operator=(Tensor rhs);
+	Tensor& operator=(Tensor& rhs);
 
 	Tensor& operator=(Tensor&& rhs) noexcept;
 
@@ -69,6 +69,10 @@ public:
 
 	// Provide a funciton that takes in an acc and element and returns the new acc
 	Tensor Reduce(size_t axis, std::function<float(float, float)> reducer);
+
+	// Takes a function op (this.element, rhs.element) and another element rhs
+	Tensor& LineByLine(std::function<float(float, float)> op, Tensor& rhs);
+	Tensor& ElementByElement(std::function<float(float, float)> op, Tensor& rhs);
 
 	// std::vector<float> at(size_t i);
 	void Transpose() {

@@ -65,18 +65,29 @@ Tensor::Tensor(const Tensor& rhs)
 }
 
 // equality operator (Does this also count as a move constructor??????) - Ask Prof Sanjay
-Tensor& Tensor::operator=(Tensor rhs)
+Tensor& Tensor::operator=(Tensor& rhs)
 {
+	// sentinel
 	if (&rhs == this) {
 		return *this;
 	}
 
-	// utilize swap trick
-	using std::swap;
-	swap(mIsTransposed, rhs.mIsTransposed);
-	swap(mRows, rhs.mRows);
-	swap(mCols, rhs.mCols);
-	swap(mData, rhs.mData);
+	// remove data
+	DeallocTensor();
+
+	// copy the data
+	mIsTransposed = rhs.mIsTransposed;
+	mRows = rhs.mRows;
+	mCols = rhs.mCols;
+
+	// alloc and fill
+	mData = new float* [mRows];
+	for (int i = 0; i < mRows; ++i) {
+		mData[i] = new float[mCols];
+		for (int j = 0; j < mCols; ++j) {
+			mData[i][j] = rhs.mData[i][j];
+		}
+	}
 
 	return *this;
 }
