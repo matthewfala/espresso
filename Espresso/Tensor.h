@@ -71,8 +71,7 @@ public:
 	Tensor Reduce(size_t axis, std::function<float(float, float)> reducer);
 
 	// Takes a function op (this.element, rhs.element) and another element rhs
-	Tensor& LineByLine(std::function<float(float, float)> op, Tensor& rhs);
-	Tensor& ElementByElement(std::function<float(float, float)> op, Tensor& rhs);
+	Tensor& TwoTensorOp(std::function<float(float, float)> op, const Tensor& rhs);
 
 	// std::vector<float> at(size_t i);
 	void Transpose() {
@@ -80,24 +79,28 @@ public:
 	}
 
 	// math
-	Tensor Dot(Tensor o) {
+	Tensor Dot(const Tensor& o) {
 		Tensor t = DotH(o, false);
 		return t;
 	}
 
-	Tensor DotT(Tensor o) {
+	Tensor DotT(const Tensor& o) {
 		Tensor t = DotH(o, true);
 		return t;
 	}
 
 	Tensor& operator+=(const Tensor& rhs);
 	Tensor& operator-=(const Tensor& rhs);
+	Tensor& operator*=(const Tensor& rhs);
+	Tensor& operator/=(const Tensor& rhs);
+
 	Tensor& operator+=(float rhs);
 	Tensor& operator-=(float rhs);
 	Tensor& operator*=(float rhs);
 	Tensor& operator/=(float rhs);
 
 	Tensor Max(size_t direction);
+	Tensor Sum(size_t direction);
 	
 	// Getters (by value)
 	inline size_t GetRows() const {
@@ -126,7 +129,7 @@ private:
 	}
 
 	// Helper function for dot product
-	Tensor DotH(Tensor o, bool isTransposed);
+	Tensor DotH(const Tensor& o, bool isTransposed);
 
 	// Memory Management
 	void AllocTensor(size_t rows, size_t cols);

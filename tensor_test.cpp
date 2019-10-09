@@ -143,6 +143,40 @@ int main()
 	k = d;
 	k.Print();
 
+	std::cerr << "Dot Test" << std::endl;
+	Tensor o = b;
+	vector<vector<float>> y{
+
+	{1, 7},
+	{2, 5}
+	};
+
+	
+	Tensor p(y);
+	p += 5;
+	p.Transpose();
+
+	o.Print();
+	p.Print();
+	Tensor q = o.DotT(p);
+	q.Print();
+
+	
+	std::cerr << "Rand Dot" << std::endl;
+
+	Tensor weight;
+	weight.RandInit(101, 784, -.5, .5);
+
+	Tensor myX; 
+	myX.Transpose();
+	myX.RandInit(784, 4, -.5, .5);
+
+	Tensor myDot;
+	myDot = weight.DotT(myX);
+	myDot.Print();
+
+
+
 	
 
 

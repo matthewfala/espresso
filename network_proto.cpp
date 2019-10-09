@@ -11,10 +11,11 @@ using std::vector;
 
 // Function prototypes
 void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels);
+void AddBiasBit(vector<vector<int>>& training_images);
 
 // Sigmoid
-inline float g(float x) { return 1.0 / (1.0 + exp(-x)); }
-inline float gprime(float y) { return y * (1 - y); }
+auto g = [](float& x) { return 1.0f / (1.0f + exp(-x)); };
+auto gprime = [](float& y) { return y * (1 - y); };
 
 int main()
 {
@@ -29,10 +30,9 @@ int main()
 	LoadData(training_images, training_labels);
 	AddBiasBit(training_images);  // bias trick
 
-	size_t inputLayerSize = training_images.size() - 1;
-	vectorsize_t> layerSizes(hiddenLayerSizes);
+	size_t inputLayerSize = training_images[0].size() - 1;
+	vector<size_t> layerSizes(hiddenLayerSizes);
 	layerSizes.emplace(layerSizes.begin(), inputLayerSize);
-
 
 	// Initiallize network
 	vector<Tensor> weights;
@@ -41,8 +41,10 @@ int main()
 	for (size_t i = 0; i < layerSizes.size() - 1; ++i) {
 		weights.emplace_back(Tensor());
 		weightGrads.emplace_back(Tensor());
-		weights[i].RandInit(layerSizes[i + 1], layerSizes[i], -.05, .05);
-		weightGrads[i].ZeroInit(layerSizes[i + 1], layerSizes[i], -.05, .05);
+
+		// +1 for bias trick
+		weights[i].RandInit(layerSizes[i + 1] + 1, layerSizes[i] + 1, -.05, .05);
+		weightGrads[i].ZeroInit(layerSizes[i + 1] + 1, layerSizes[i] + 1);
 	}
 
 	// Load data batcher
@@ -56,21 +58,35 @@ int main()
 	bool isLast = batch.lastBatch;
 
 	// Forward pass
+	Tensor O;
 
 	// FC & Sigmoid
 	for (auto& W : weights) {
 
 		// FC
-		X = W.DotT(X); // use DotT for a pretransposed matrix
+		std::cerr << "W" << std::endl;
+		//W.Print();
+		std::cerr << "X" << std::endl;
+		//X.Print();
+
+		O = W.DotT(X); // use DotT for a pretransposed matrix
+		O.Print();
 
 		// Sigmoid
-		X.ForEach(g);
+		O.ForEach(g);
+		X = O;
 
 	}
 
 	// Loss
 	X -= y;  // row wise subtraction
-	X *= X;
+	X *= X;  // square by element
+	Tensor Loss = X.Sum(0).Sum(1);
+
+	// Log result
+	std::cerr << "Loss: " << Loss.at(0, 0) << std::endl;
+
+
 
 
 

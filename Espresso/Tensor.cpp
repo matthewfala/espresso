@@ -55,6 +55,11 @@ Tensor::Tensor(const Tensor& rhs)
 	, mRows(rhs.mRows)
 	, mCols(rhs.mCols)
 {
+
+	if (this == &rhs) {
+		return;
+	}
+
 	mData = new float* [mRows];
 	for (int i = 0; i < mRows; ++i) {
 		mData[i] = new float[mCols];
@@ -92,6 +97,7 @@ Tensor& Tensor::operator=(Tensor& rhs)
 	return *this;
 }
 
+// Move assignment
 Tensor& Tensor::operator=(Tensor&& rhs) noexcept {
 	if (&rhs == this) {
 		return *this;
@@ -101,6 +107,11 @@ Tensor& Tensor::operator=(Tensor&& rhs) noexcept {
 	mRows = std::move(rhs.mRows);
 	mCols = std::move(rhs.mCols);
 	mData = std::move(rhs.mData);
+
+	// don't forget to wipe rhs
+	rhs.mData = nullptr;
+	rhs.mRows = 0;
+	rhs.mCols = 0;
 
 	return *this;
 }
@@ -294,55 +305,8 @@ Tensor Tensor::Reduce(size_t axis, std::function<float(float, float)> reducer) {
 }
 
 
-Tensor Tensor::DotH(Tensor o, bool isTransposed) { 
+Tensor& Tensor::TwoTensorOp(std::function<float(float, float)> op, const Tensor& rhs) {
 
-	// sentinal
-	if (GetCols() != o.GetRows()) {
-		std::cout << "Error: Dot product dimensions are incompatible" << std::endl;
-		return *this;
-	}
-
-	// dot
-	Tensor d;
-	if (!isTransposed) {
-		d.ZeroInit(GetRows(), o.GetCols());
-	}
-	else {
-		d.ZeroInit(o.GetCols(), GetRows());
-		d.Transpose();
-	}
-
-	for (int i = 0; i < GetRows(); ++i) {
-		for (int j = 0; j < o.GetCols(); ++j) {
-			for (int k = 0; k < GetCols(); ++k) {
-				d.at(i, j) += at(i, k) * o.at(k, j);
-			}
-		}
-	}
-
-	return d;
-}
-
-Tensor& Tensor::operator+=(const Tensor& rhs) { 
-
-	// sentinal
-	if (GetCols() != rhs.GetCols() || GetRows() != rhs.GetRows()) {
-		std::cout << "Error: Addition shapes do not match" << std::endl;
-		return *this;
-	}
-
-	// copy the data
-	for (size_t i = 0; i < GetRows(); ++i) {
-		for (size_t j = 0; j < GetCols(); ++j) {
-			at(i, j) += rhs.atC(i, j);
-		}
-	}
-
-	return *this;
-}
-
-Tensor& Tensor::operator-=(const Tensor& rhs) {
-	
 	// Special: Row wise subtraction
 	size_t iStep = 0;
 	size_t jStep = 0;
@@ -388,8 +352,8 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 				size_t j = jStep * step + jNext * next;
 
 				// for line, only take into account the (line step) basis, not the (next) basis
-				at(i, j) -= rhs.atC(iStep * step, jStep * step);
-
+				at(i, j) = op(at(i, j), rhs.atC(iStep * step, jStep * step));
+				
 				++step;
 			}
 
@@ -398,8 +362,6 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 
 		return *this;
 	}
-
-
 
 	// sentinal
 	if (GetCols() != rhs.GetCols() || GetRows() != rhs.GetRows()) {
@@ -415,6 +377,54 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 	}
 
 	return *this;
+}
+
+
+Tensor Tensor::DotH(const Tensor& o, bool isTransposed) { 
+
+	// sentinal
+	if (GetCols() != o.GetRows()) {
+		std::cout << "Error: Dot product dimensions are incompatible" << std::endl;
+		return *this;
+	}
+
+	// dot
+	Tensor d;
+	if (!isTransposed) {
+		d.ZeroInit(GetRows(), o.GetCols());
+	}
+	else {
+		d.Transpose();
+		d.ZeroInit(GetRows(), o.GetCols());
+	}
+
+	for (int i = 0; i < GetRows(); ++i) {
+		for (int j = 0; j < o.GetCols(); ++j) {
+			float sum = 0;
+			for (int k = 0; k < GetCols(); ++k) {
+				sum += atC(i, k) * o.atC(k, j);
+			}
+			d.at(i, j) = sum;
+		}
+	}
+
+	return d;
+}
+
+Tensor& Tensor::operator+=(const Tensor& rhs) { 
+	return TwoTensorOp([](float a, float b) { return a + b; }, rhs);
+}
+
+Tensor& Tensor::operator-=(const Tensor& rhs) {
+	return TwoTensorOp([](float a, float b) { return a - b; }, rhs);
+}
+
+Tensor& Tensor::operator*=(const Tensor& rhs) {
+	return TwoTensorOp([](float a, float b) { return a * b; }, rhs);
+}
+
+Tensor& Tensor::operator/=(const Tensor& rhs) {
+	return TwoTensorOp([](float a, float b) { return a / b; }, rhs);
 }
 
 // Scalar Operators
@@ -441,5 +451,11 @@ Tensor& Tensor::operator/=(float rhs) {
 Tensor Tensor::Max(size_t direction) {
 	return Reduce(direction, [](float acc, float cur) {
 		return (cur > acc) ? cur : acc;
+		});
+}
+
+Tensor Tensor::Sum(size_t direction) {
+	return Reduce(direction, [](float acc, float cur) {
+		return cur + acc;
 		});
 }
