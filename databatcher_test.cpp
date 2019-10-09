@@ -5,11 +5,12 @@
 
 #include "MNIST_reader.h"
 #include "Espresso/Tensor.h"
-#include "Espresso/DataBatcher.h"
+#include "Espresso/DataBatcher.hpp"
 
 using namespace std;
 int main()
 {
+	/*
 	string filename = "../MNIST/train-images.idx3-ubyte";
 	//load MNIST images
 	vector <vector< int> > training_images;
@@ -23,12 +24,15 @@ int main()
 	loadMnistLabels(filename, training_labels);
 	cout << "Number of labels: " << training_labels.size() << endl;
 
-
-
+	*/
 
 	// Initiallize our network
 
-	DataBatcher db(training_images, training_images, 5);
+	vector<vector<int>> training_images{ {1, 2, 3}, { 4, 5, 6 }};
+	vector<int> training_labels{ 1, 0 };
+
+
+	DataBatcher db(training_images, training_labels, 5);
 
 	db.Shuffle();
 	Data batch1 = db.GetBatch();
@@ -41,14 +45,14 @@ int main()
 
 
 	// create nodes
-
+	
 
 
 	return 0;
 }
 
 // Skeleton Code
-
+/*
 // Data contains batchsize
 Records Train(Network& n, int epochs = 100, Optimizer& optimizer = SGD, const DataBatcher& dataBatcher, const Data& valData) {
 
@@ -86,7 +90,7 @@ Records Train(Network& n, int epochs = 100, Optimizer& optimizer = SGD, const Da
 	return records;
 }
 
-
+*/
 // Network
 
 // Automatic indexing
@@ -101,7 +105,7 @@ Records Train(Network& n, int epochs = 100, Optimizer& optimizer = SGD, const Da
 // NetNode LossNode (chain loss function to this)
 // NetNode OutputNode (chain d
 
-
+/*
 Record Test(Network n, Data data) {
 
 	// Forward pass
@@ -113,3 +117,5 @@ Record Test(Network n, Data data) {
 void Predict(Network n, Unlabeled ud) {
 	return;
 }
+
+*/

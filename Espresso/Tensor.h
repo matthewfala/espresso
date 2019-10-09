@@ -1,3 +1,4 @@
+#pragma once
 
 #include <vector>
 #include <iostream>
@@ -9,7 +10,7 @@ class Tensor {
 public:
 
 	// static seed
-	static void Seed(size_t seed) {
+	static void Seed(unsigned int seed) {
 		mSeed = seed;
 	}
 
@@ -23,7 +24,7 @@ public:
 	~Tensor();
 
 	// move constructor
-	Tensor(Tensor&& rhs);
+	Tensor(Tensor&& rhs) noexcept;
 
 	// copy constructor
 	Tensor(const Tensor& rhs);
@@ -31,11 +32,13 @@ public:
 	// equality operator
 	Tensor& operator=(Tensor rhs);
 
+	Tensor& operator=(Tensor&& rhs) noexcept;
+
 	// init
 	void ZeroInit(size_t r, size_t c);
 
 	// pass in size and a random range
-	void RandInit(size_t r, size_t c, float min, float max, size_t seed = mSeed);
+	void RandInit(size_t r, size_t c, float min, float max, unsigned int seed = mSeed);
 
 	// Load in a vector
 	void SetData(const std::vector<std::vector<float>>& t);
@@ -71,7 +74,16 @@ public:
 	}
 
 	// math
-	Tensor Dot(Tensor o);
+	Tensor Dot(Tensor o) {
+		Tensor t = DotH(o, false);
+		return t;
+	}
+
+	Tensor DotT(Tensor o) {
+		Tensor t = DotH(o, true);
+		return t;
+	}
+
 	Tensor& operator+=(const Tensor& rhs);
 	Tensor& operator-=(const Tensor& rhs);
 	Tensor& operator+=(float rhs);
@@ -96,7 +108,7 @@ public:
 
 private:
 
-	static size_t mSeed;
+	static unsigned int mSeed;
 
 	// Getters (by reference)
 	inline size_t& Rows() {
@@ -107,14 +119,18 @@ private:
 		return mIsTransposed ? mRows : mCols;
 	}
 
+	// Helper function for dot product
+	Tensor DotH(Tensor o, bool isTransposed);
+
 	// Memory Management
 	void AllocTensor(size_t rows, size_t cols);
 	void DeallocTensor();
 
-	bool mIsTransposed = false;
 	float** mData = nullptr;
 	size_t mRows = 0;
 	size_t mCols = 0;
+
+	bool mIsTransposed = false;
 
 
 };

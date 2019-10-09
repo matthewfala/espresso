@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "Espresso/Tensor.h"
+#include "Espresso/DataBatcher.hpp"
 using std::vector;
 
 int main()

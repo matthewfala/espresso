@@ -1,5 +1,4 @@
 #include "Tensor.h"
-#include <iostream>
 #include <utility>
 #include <random>
 
@@ -34,7 +33,7 @@ Tensor::Tensor(const std::vector<std::vector<int>>& init) {
 }
 
 // Move Constructor 
-Tensor::Tensor(Tensor&& rhs)
+Tensor::Tensor(Tensor&& rhs) noexcept
 	: mIsTransposed(std::move(rhs.mIsTransposed))
 	, mRows(std::move(rhs.mRows))
 	, mCols(std::move(rhs.mCols))
@@ -68,6 +67,10 @@ Tensor::Tensor(const Tensor& rhs)
 // equality operator (Does this also count as a move constructor??????) - Ask Prof Sanjay
 Tensor& Tensor::operator=(Tensor rhs)
 {
+	if (&rhs == this) {
+		return *this;
+	}
+
 	// utilize swap trick
 	using std::swap;
 	swap(mIsTransposed, rhs.mIsTransposed);
@@ -77,6 +80,20 @@ Tensor& Tensor::operator=(Tensor rhs)
 
 	return *this;
 }
+
+Tensor& Tensor::operator=(Tensor&& rhs) noexcept {
+	if (&rhs == this) {
+		return *this;
+	}
+
+	mIsTransposed = std::move(rhs.mIsTransposed);
+	mRows = std::move(rhs.mRows);
+	mCols = std::move(rhs.mCols);
+	mData = std::move(rhs.mData);
+
+	return *this;
+}
+
 
 // Memory Management
 void Tensor::AllocTensor(size_t rows, size_t cols) {
@@ -169,9 +186,9 @@ void Tensor::ZeroInit(size_t r, size_t c) {
 	SetData(z);
 }
 
-size_t Tensor::mSeed = 0;
+unsigned int Tensor::mSeed = 0;
 
-void Tensor::RandInit(size_t r, size_t c, float min, float max, size_t seed) {
+void Tensor::RandInit(size_t r, size_t c, float min, float max, unsigned int seed) {
 
 
 	std::mt19937 generator(mSeed);  // mt19937 is a standard mersenne_twister_engine
@@ -269,7 +286,8 @@ Tensor Tensor::Reduce(size_t axis, std::function<float(float, float)> reducer) {
 	return acc;
 }
 
-Tensor Tensor::Dot(Tensor o) { 
+
+Tensor Tensor::DotH(Tensor o, bool isTransposed) { 
 
 	// sentinal
 	if (GetCols() != o.GetRows()) {
@@ -279,7 +297,13 @@ Tensor Tensor::Dot(Tensor o) {
 
 	// dot
 	Tensor d;
-	d.ZeroInit(GetRows(), o.GetCols());
+	if (!isTransposed) {
+		d.ZeroInit(GetRows(), o.GetCols());
+	}
+	else {
+		d.ZeroInit(o.GetCols(), GetRows());
+		d.Transpose();
+	}
 
 	for (int i = 0; i < GetRows(); ++i) {
 		for (int j = 0; j < o.GetCols(); ++j) {
@@ -306,6 +330,8 @@ Tensor& Tensor::operator+=(const Tensor& rhs) {
 			at(i, j) += rhs.atC(i, j);
 		}
 	}
+
+	return *this;
 }
 
 Tensor& Tensor::operator-=(const Tensor& rhs) {
@@ -321,6 +347,8 @@ Tensor& Tensor::operator-=(const Tensor& rhs) {
 			at(i, j) -= rhs.atC(i, j);
 		}
 	}
+
+	return *this;
 }
 
 // Scalar Operators

@@ -4,7 +4,6 @@
 
 using std::vector;
 
-
 struct Data {
 	Tensor X;
 	Tensor y;
@@ -16,11 +15,13 @@ class DataBatcher {
 public:
 
 	// constructor
-	DataBatcher(const vector<vector<int>>& X, const vector<int>& y, size_t batchSize = 1, size_t seed = 0) {
+	DataBatcher(const vector<vector<int>>& X, const vector<int>& y, size_t batchSize = 1, unsigned int seed = 0) {
 
 		// convert to float vector
 		Tensor tX = Tensor(X);
-		Tensor tY = Tensor(vector<vector<int>>{ y });
+
+		vector<vector<int>> yV{ y };
+		Tensor tY = Tensor(yV);
 
 		mX = tX.GetData();
 		mY = tY.GetData()[0];
@@ -33,14 +34,24 @@ public:
 		}
 
 		// setup random generator
-		mGenerator = std::mt19937(seed);
+		mGenerator = new std::mt19937(seed);
 		
 	}
-	   
+	
+	// Destructor
+	~DataBatcher() {
+		delete mGenerator;
+	}
+
+
+	// remove copy constructor and assignment op
+	DataBatcher& operator=(const DataBatcher&) = delete;
+	DataBatcher(const DataBatcher&) = delete;
+
 
 	// shuffle
 	void Shuffle() {
-		std::shuffle(mDataOrder.begin(), mDataOrder.end(), mGenerator());
+		std::shuffle(mDataOrder.begin(), mDataOrder.end(), *mGenerator);
 		mDataNextIndex = 0;
 	}
 
@@ -81,5 +92,5 @@ private:
 	size_t mBatchSize;
 	vector<size_t> mDataOrder;
 	size_t mDataNextIndex = 0;
-	std::mt19937 mGenerator;
+	std::mt19937* mGenerator;
 };
