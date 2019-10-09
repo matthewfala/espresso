@@ -104,11 +104,6 @@ void Tensor::AllocTensor(size_t rows, size_t cols) {
 	Rows() = rows;
 	Cols() = cols;
 
-	std::cerr << "Rows: " << Rows() << std::endl;
-	std::cerr << "Cols: " << Cols() << std::endl;
-	std::cerr << "mRows: " << mRows << std::endl;
-	std::cerr << "mCols: " << mCols << std::endl;
-
 	// Create based on data specs mRows and mCols
 	mData = new float* [mRows];
 	for (int i = 0; i < mRows; ++i) {
@@ -138,8 +133,9 @@ void Tensor::SetData(const std::vector<std::vector<float>>& t) {
 		return;
 	}
 
-	std::cerr << "Setting with Vector Shape: " << t.size() << ", " << t[0].size() << std::endl;
-	std::cerr << "Matrix Shape             : " << GetRows() << ", " << GetCols() << std::endl;
+	// Helpful debug shape printing
+	// std::cerr << "Allocating Tensor of Shape: " << t.size() << ", " << t[0].size() << std::endl;
+	// std::cerr << "Matrix Shape             : " << GetRows() << ", " << GetCols() << std::endl;
 	////std::cerr << "Matrix Shape             : " << GetRows() << ", " << GetCols() << std::endl;
 
 

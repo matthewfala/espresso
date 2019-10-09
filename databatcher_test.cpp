@@ -10,39 +10,57 @@
 using namespace std;
 int main()
 {
-	/*
+	
 	string filename = "../MNIST/train-images.idx3-ubyte";
 	//load MNIST images
 	vector <vector< int> > training_images;
 	loadMnistImages(filename, training_images);
 	cout << "Number of images: " << training_images.size() << endl;
-	cout << "Image size: " << training_images[0].size() << endl;
+	cerr << "Image size: " << training_images[0].size() << endl;
 
 	filename = "../MNIST/train-labels.idx1-ubyte";
 	//load MNIST labels
 	vector<int> training_labels;
 	loadMnistLabels(filename, training_labels);
-	cout << "Number of labels: " << training_labels.size() << endl;
+	cerr << "Number of labels: " << training_labels.size() << endl;
 
-	*/
+	
 
 	// Initiallize our network
 
-	vector<vector<int>> training_images{ {1, 2, 3}, { 4, 5, 6 }};
-	vector<int> training_labels{ 1, 0 };
+	//vector<vector<int>> training_images{ {1, 2, 3}, { 4, 5, 6 }};
+	//vector<int> training_labels{ 1, 0 };
 
 
-	DataBatcher db(training_images, training_labels, 5);
+	DataBatcher db(training_images, training_labels, 1);
 
 	db.Shuffle();
 	Data batch1 = db.GetBatch();
 
+	std::cerr << "Data y" << std::endl;
+	batch1.y.Print();
+	
 	std::cerr << "Data X" << std::endl;
 	batch1.X.Print();
 
-	std::cerr << "Data y" << std::endl;
-	batch1.y.Print();
+	std::cerr << "Data Done" << std::endl;
+	std::cerr << batch1.lastBatch << std::endl;
 
+
+	std::cerr << "Batch 2" << std::endl;
+	Data batch2 = db.GetBatch();
+
+	std::cerr << "Data y" << std::endl;
+	batch2.y.Print();
+
+	std::cerr << "Data X" << std::endl;
+	batch2.X.Print();
+
+	std::cerr << "Data Done" << std::endl;
+	std::cerr << batch2.lastBatch << std::endl;
+
+
+	
 
 	// create nodes
 	

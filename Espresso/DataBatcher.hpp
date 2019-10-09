@@ -16,6 +16,8 @@ public:
 
 	// constructor
 	DataBatcher(const vector<vector<int>>& X, const vector<int>& y, size_t batchSize = 1, unsigned int seed = 0) {
+		
+		mBatchSize = batchSize;
 
 		// convert to float vector
 		Tensor tX = Tensor(X);
@@ -65,9 +67,10 @@ public:
 		}
 
 		bool lastBatch = false;
-		for (int i = 0; i < mBatchSize; ++i) {
-			X.emplace_back(mX[i]);
-			Y.emplace_back(mY[i]);
+		for (size_t i = 0; i < mBatchSize; ++i) {
+			size_t index = mDataOrder[mDataNextIndex];
+			X.emplace_back(mX[index]);
+			Y.emplace_back(mY[index]);
 			++mDataNextIndex;
 
 			// All data consumed
