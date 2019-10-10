@@ -45,8 +45,18 @@ void PrintRecords(std::string name, const std::vector<Record>& trainRecords);
 void PrintRecord(std::string name, const Record r);
 
 // Sigmoid
-auto g = [](float& x) { x = 1.0f / (1.0f + exp(-x)); };
-auto gprime = [](float& y) { y = y * (1 - y); };
+//auto g = [](float& x) { x = 1.0f / (1.0f + exp(-x)); };
+//auto gprime = [](float& y) { y = y * (1 - y); };
+
+// Sigmoid
+auto mtan = [](float& x) { x = (std::exp(x) - std::exp(-x)) / (std::exp(x) + std::exp(-x)); };
+auto mtanprime = [](float& x) { x = 1 - x * x; };
+
+auto sig = [](float& x) { x = 1.0f / (1.0f + exp(-x)); };
+auto sigprime = [](float& y) { y = y * (1 - y); };
+
+auto& g = sig;
+auto& gprime = sigprime;
 
 int main()
 {
@@ -58,7 +68,7 @@ int main()
 	float testToVal = 2.0f / 3;
 
 	// Config
-	float lr = 1;
+	float lr = 1.0f;//.01;//1;
 	int epochs = 35;
 	size_t batchSize = 32;
 	size_t layers = 3;
