@@ -21,6 +21,7 @@ public:
 
 		// convert to float vector
 		Tensor tX = Tensor(X);
+		tX /= 255; // scale to 0-1;
 
 		vector<vector<int>> yV{ y };
 		Tensor tY = Tensor(yV);

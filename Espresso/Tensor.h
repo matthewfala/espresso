@@ -116,6 +116,8 @@ public:
 
 	Tensor Max(size_t direction);
 	Tensor Sum(size_t direction);
+	Tensor MaxIndiceByRow() const;
+
 	
 	// Getters (by value)
 	inline size_t GetRows() const {
@@ -133,8 +135,11 @@ public:
 	}
 
 	// Utility
-	void Print();
+	void Print() const;
 	void PrintShape();
+	void PrintOne(std::string str) {
+		//std::cerr << str << ": [[ " << atC(0, 0) << " ]]" << std::endl;
+	}
 
 
 private:

@@ -53,14 +53,14 @@ int main()
 	int trainSize = 6000;
 	int testSize = 10000;
 
-	float testToVal = 1.0f / 3;
+	float testToVal = 2.0f / 3;
 
 	// Config
-	float lr = .1;
-	int epochs = 500;
-	size_t batchSize = 4;
-	size_t layers = 2;
-	vector<size_t> hiddenLayerSizes{ 100, 10 }; // +1 for weight due to bias
+	float lr = 1;
+	int epochs = 35;
+	size_t batchSize = 32;
+	size_t layers = 3;
+	vector<size_t> hiddenLayerSizes{ 32, 32, 10 }; // +1 for weight due to bias
 
 	// Load data
 	vector<vector<int>> training_images;
@@ -88,12 +88,20 @@ int main()
 	int trainSetSize = trainSize * testToVal;
 	vector<vector<int>> train_img(training_set_img.begin(), training_set_img.begin() + trainSetSize);
 	vector<int> train_lbl(training_set_lbl.begin(), training_set_lbl.begin() + trainSetSize);
-	DataBatcher trainBatcher(testing_set_img, testing_set_lbl, batchSize);
+	DataBatcher trainBatcher(train_img, train_lbl, batchSize);
 
 	// Training: Val partition
 	vector<vector<int>> val_img(training_set_img.begin() + trainSetSize, training_set_img.end());
 	vector<int> val_lbl(training_set_lbl.begin() + trainSetSize, training_set_lbl.end());
-	DataBatcher valBatcher(testing_set_img, testing_set_lbl, batchSize);
+	DataBatcher valBatcher(val_img, val_lbl, batchSize);
+
+
+	std::cerr << std::endl;
+	std::cerr << "Partitioned Data" << std::endl;
+	std::cerr << "Test Set Size: 	" << testing_set_img.size() << std::endl;
+	std::cerr << "Train Set Size:	" << train_img.size() << std::endl;
+	std::cerr << "Val Set Size:		" << val_img.size() << std::endl;
+	std::cerr << std::endl;
 
 
 	// Initiallize network
@@ -116,6 +124,8 @@ int main()
 	Record testRecord;
 
 	for (int e = 0; e < epochs; ++e) {
+
+		std::cerr << std::endl << std::endl << "Epoch: " << e << std::endl;
 		// shuffle data
 		trainBatcher.Shuffle();
 
@@ -128,22 +138,29 @@ int main()
 			lastBatch = batch.lastBatch;
 			BatchTrain(nn, batch, lr);
 
+			std::cerr << ("X");
+
 		} while (!lastBatch);
 
+		std::cerr << std::endl;
+
 		// Test & record
+		std::cerr << "Recording Train Performance" << std::endl;
 		trainRecords.emplace_back(Test(nn, trainBatcher));
+		std::cerr << "Loss: " << trainRecords.back().loss << std::endl;
+		std::cerr << "Accuracy: " << static_cast<float>(trainRecords.back().correct) / trainRecords.back().totalPredictions << std::endl;
+
+		std::cerr << "Recording Val Performance" << std::endl;
 		valRecords.emplace_back(Test(nn, valBatcher));
-		
+		std::cerr << "Loss: " << valRecords.back().loss << std::endl;
+		std::cerr << "Accuracy: " << static_cast<float>(valRecords.back().correct) / valRecords.back().totalPredictions << std::endl;
+
 	}
 
 	testRecord = Test(nn, testBatcher);
 
 	return 0;
 }
-
-
-
-
 
 
 void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels) {
@@ -227,9 +244,6 @@ void BatchTrain(Network& n, Data batch, float lr) {
 	// Forward pass
 	ForwardPass(n, X, y);
 
-	// Log result
-	std::cerr << "Loss: " << n.loss.at(0, 0) << std::endl;
-
 	// Backprop
 
 	// loss function
@@ -241,15 +255,27 @@ void BatchTrain(Network& n, Data batch, float lr) {
 	// reverse sum
 	squareOutputGrad += (1.0f / X.GetCols());   // Possible error source
 
+	squareOutputGrad.PrintOne("Point A");
+
 	Tensor squareLocalGrad = n.squareInput;
 	squareLocalGrad *= 2;
+
+	n.squareInput.PrintOne("x^2 X:");
+
+	squareLocalGrad.PrintOne("Point B*: Chk");
+
+
+
 
 	// Good
 
 	// dInput = dOutput * LocalGradient
 	Tensor lossInputGrad = squareOutputGrad;
 	lossInputGrad *= squareLocalGrad;
-	lossInputGrad *= -1;
+	lossInputGrad *= -1;  // squareInput is negated
+
+	lossInputGrad.PrintOne("Point C:");
+
 	// lossInputGrad.PrintShape();
 
 	// std::cerr << "Losss input grad" << std::endl;
@@ -262,51 +288,54 @@ void BatchTrain(Network& n, Data batch, float lr) {
 		// Reverse sigmoid
 
 		// local gradient
-		Tensor& O = n.layerOutputCache[oi];
+		Tensor& O = n.layerOutputCache[oi]; // sigmoid output
 		if (oi != n.layerOutputCache.size() - 1) {
 			O.ToggleBiasOff(); // remove the bias bit if not output layer
 		}
+		
+		// start with the sigmoid output
+		Tensor dO = O;  //layerOutputGradient;
+		dO.PrintOne("Point S:");
 
-		Tensor dO = layerOutputGradient;
 		// dO.Print();
 
-		dO.ForEach(gprime);
-		// dO.Print();
+		dO.ForEach(gprime); // SHould be called on the output of sigmoid
 
-		// std::cerr << "Rows: " << dO.GetRows() << std::endl;
-
-		// std::cerr << "Next Layer Input Gradient" << std::endl;
-		// layerOutputGradient.PrintShape();
-		// std::cerr << "Local Sigmoid Gradient" << std::endl;
-		// dO.PrintShape();                                          // Checked to here.
+		dO.PrintOne("Point Delta Sigma");
 
 		// global gradient
 		dO *= layerOutputGradient;
+
+		dO.PrintOne("Point d0");
+
+		// Checked up to here.
 
 		// Reverse FC
 		Tensor& Xi = (oi > 0) ? n.layerOutputCache[static_cast<size_t>(oi) - 1] : X;
 
 		Xi.Transpose();
-		n.weightGrads[oi] = O.Dot(Xi);
+		n.weightGrads[oi] = dO.Dot(Xi);
 
 		Xi.Transpose();
 
 		Tensor& W = n.weights[oi];
 		W.Transpose();
-		layerOutputGradient = W.Dot(O);
+		layerOutputGradient = W.Dot(dO); // From Christ
 		layerOutputGradient.ToggleBiasOff();
 		W.Transpose();
 
 		// restore O
-		O.ToggleBiasOn();
+		dO.ToggleBiasOn();
 
-		//layerOutputGradient.PrintShape();
+		// layerOutputGradient.PrintShape();
 
 	}
 
 
 	// Gradient Descent (Update W)
 	for (int i = 0; i < n.weights.size(); ++i) {
+		//n.weightGrads[i].Print();
+		//w.Print();
 
 		// Grad -> Step size
 		n.weightGrads[i] *= lr;
@@ -328,7 +357,7 @@ void ForwardPass(Network& n, const Tensor& X, const Tensor& y, bool predictionMo
 	for (size_t layer = 0; layer < n.weights.size(); ++layer) {
 
 		// FC
-		std::cerr << "FC Layer: " << layer << std::endl;
+		// std::cerr << "FC Layer: " << layer << std::endl;
 		Tensor& W = n.weights[layer];
 		if (layer != n.weights.size() - 1) {
 			O = W.DotTB(O); // use DotTB for a pretransposed matrix + bias bit
@@ -338,12 +367,21 @@ void ForwardPass(Network& n, const Tensor& X, const Tensor& y, bool predictionMo
 			O = W.DotT(O); // last layer's output is not biased
 		}
 
+		// O.Print();
+		//std::cerr << "waiting" << std::endl;
+
+
 		// Sigmoid
 		O.ForEach(g);
 		O.ToggleBiasOn(); // add back bias (if present);
 
+		O.PrintOne("Sigmoid Output:");
+
+
 		// save the output
-		n.layerOutputCache.emplace_back(O);
+		if (!predictionMode) {
+			n.layerOutputCache.emplace_back(O);
+		}
 
 		// output progress
 		// O.PrintShape();
@@ -351,7 +389,9 @@ void ForwardPass(Network& n, const Tensor& X, const Tensor& y, bool predictionMo
 
 	// Predict
 	if (predictionMode) {
-		Tensor labelMax = n.layerOutputCache.back().Max(0);
+		/*
+		Tensor labelMax = O.Max(0);
+		Tensor labelMax
 		Tensor labelOneHot = labelMax.TwoTensorOp([](float a, float b) {
 			if (a == b) {
 				return 1.0f;
@@ -370,24 +410,37 @@ void ForwardPass(Network& n, const Tensor& X, const Tensor& y, bool predictionMo
 				return 0.0f;
 			},
 			y);
-		accuracy = accuracy.Sum(0).Sum(1);
 
-		n.correctPredictions = accuracy.atC(0, 0);
+			*/
+
+		Tensor accuracy = O.MaxIndiceByRow().TwoTensorOp([](float a, float b) {
+			if (a == b) {
+				return 1;
+			};
+			return 0;
+			}, y.MaxIndiceByRow());
+		
+
+		n.correctPredictions = accuracy.Sum(1).atC(0, 0);
 		n.totalPredictions = y.GetCols();
 	}
-	
 
-	// Loss Function
-	n.squareInput = n.layerOutputCache.back();
-	n.squareInput *= -1;
-	n.squareInput += y; // element wise addition
+	if (!predictionMode) {
 
-	// Square & loss
-	n.square = n.squareInput;  // square by element
-	n.square *= n.square;
-	n.loss = n.square.Sum(0).Sum(1);
-	n.totalLoss = n.loss.atC(0, 0); // for records
-	n.loss /= static_cast<float>(X.GetCols());   //// POSSIBLE ERROR SOURCE!!!!!!!
+		// Loss Function
+		n.squareInput = n.layerOutputCache.back();
+		n.squareInput *= -1;
+		n.squareInput += y; // element wise addition
+		//y.Print();
+
+		// Square & loss
+		n.square = n.squareInput;  // square by element
+		n.square *= n.square;
+		n.loss = n.square.Sum(0).Sum(1);
+		n.totalLoss = n.loss.atC(0, 0); // for records
+		n.loss /= static_cast<float>(X.GetCols()); 
+
+	}
 	return;
 }
 

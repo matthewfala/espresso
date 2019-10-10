@@ -50,6 +50,23 @@ Tensor::~Tensor() {
 	DeallocTensor();
 }
 
+Tensor Tensor::MaxIndiceByRow() const {
+	std::vector<float> maxValue(GetCols(), 0);
+	std::vector<float> maxIndice(GetCols());
+
+	for (int i = 0; i < GetRows(); ++i) {
+		for (int j = 0; j < GetCols(); ++j) {
+			if (maxValue[j] < atC(i, j)) {
+				maxValue[j] = atC(i, j);
+				maxIndice[j] = i;
+			}
+		}
+	}
+
+	return Tensor(std::vector<std::vector<float>>{maxIndice});
+}
+
+
 // copy constructor
 Tensor::Tensor(const Tensor& rhs)
 	: mIsTransposed(rhs.mIsTransposed)
@@ -234,17 +251,17 @@ void Tensor::RandInit(size_t r, size_t c, float min, float max, unsigned int see
 
 
 // Utility
-void Tensor::Print() {
-	std::cout << GetRows() << " x " << GetCols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
-	std::cout << "[";
+void Tensor::Print() const {
+	std::cerr << GetRows() << " x " << GetCols() << " Matrix. " << (mIsTransposed ? "Transposed" : "Not Transposed") << std::endl;
+	std::cerr << "[";
 	for (int i = 0; i < GetRows(); ++i) {
-		std::cout << "[	";
+		std::cerr << "[	";
 		for (int j = 0; j < GetCols(); ++j) {
-			std::cout << at(i, j) << ",	";
+			std::cerr << atC(i, j) << ",	";
 		}
-		std::cout << "	]" << std::endl;
+		std::cerr << "	]" << std::endl;
 	}
-	std::cout << "]	" << std::endl;
+	std::cerr << "]	" << std::endl;
 
 }
 
