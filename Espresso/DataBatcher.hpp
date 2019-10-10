@@ -91,6 +91,10 @@ public:
 
 	}
 
+	size_t GetDataCount() const {
+		return mY.size();
+	}
+
 private:
 
 	vector<vector<float>> mX;

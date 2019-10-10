@@ -38,9 +38,11 @@ struct Record {
 void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels);
 void AddBiasBit(vector<vector<int>>& training_images);
 void BatchTrain(Network& n, Data batch, float lr);
-Tensor OneHotEncode(Tensor& y);
+Tensor OneHotEncode(Tensor& y, size_t catigories);
 void ForwardPass(Network& n, const Tensor& X, const Tensor& y, bool predictionMode = false);
 Record Test(Network& n, DataBatcher& batcher);
+void PrintRecords(std::string name, const std::vector<Record>& trainRecords);
+void PrintRecord(std::string name, const Record r);
 
 // Sigmoid
 auto g = [](float& x) { x = 1.0f / (1.0f + exp(-x)); };
@@ -122,6 +124,8 @@ int main()
 	std::vector<Record> trainRecords;
 	std::vector<Record> valRecords;
 	Record testRecord;
+	Network bestNet;
+	float bestLoss = 100000000;
 
 	for (int e = 0; e < epochs; ++e) {
 
@@ -155,13 +159,51 @@ int main()
 		std::cerr << "Loss: " << valRecords.back().loss << std::endl;
 		std::cerr << "Accuracy: " << static_cast<float>(valRecords.back().correct) / valRecords.back().totalPredictions << std::endl;
 
+		// Get best network
+		if (valRecords.back().loss < bestLoss) {
+			bestNet = nn;
+		}
+
 	}
 
-	testRecord = Test(nn, testBatcher);
+	testRecord = Test(bestNet, testBatcher);
+
+	PrintRecords("Train", trainRecords);
+	PrintRecords("Val", valRecords);
+	PrintRecord("Test", testRecord);
 
 	return 0;
 }
 
+void PrintRecords(std::string name, const std::vector<Record>& trainRecords) {
+	std::cerr << std::endl;
+	std::cerr << name << " Record csv:" << std::endl;
+	std::cerr << "Loss: " << std::endl;
+	for (auto r : trainRecords) {
+		std::cerr << r.loss << ",";
+	}
+
+	std::cerr << std::endl;
+	std::cerr << "Accuracy: " << std::endl;
+
+	for (auto r : trainRecords) {
+		std::cerr << static_cast<float>(r.correct) / r.totalPredictions << ",";
+	}
+	
+	std::cerr << std::endl;
+}
+
+void PrintRecord(std::string name, const Record r) {
+	std::cerr << std::endl;
+	std::cerr << "-----------------------------------------------------------------------------" << std::endl;
+	std::cerr << name << " Record" << std::endl;
+	std::cerr << "Loss: " << std::endl;
+	std::cerr << r.loss << std::endl;
+	std::cerr << std::endl;
+	std::cerr << "Accuracy: " << std::endl;
+	std::cerr << static_cast<float>(r.correct) / r.totalPredictions;
+
+}
 
 void LoadData(vector<vector<int>>& training_images, vector<int>& training_labels) {
 
@@ -229,6 +271,10 @@ Record Test(Network& n, DataBatcher& batcher) {
 		r.loss += n.totalLoss;
 		
 	} while (!lastBatch);
+
+
+	// Scale the loss
+	r.loss /= static_cast<float>(batcher.GetDataCount());
 
 	return r;
 }
